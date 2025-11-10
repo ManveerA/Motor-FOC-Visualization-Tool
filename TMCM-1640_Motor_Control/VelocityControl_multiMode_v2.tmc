@@ -1,0 +1,358 @@
+SAP 159, 0, 8 // commutation mode; 0: Block, 6: FOC Hall, 8: FOC Controlled
+SAP 6, 0, 5000 // max current
+SAP 177, 0, 1500 // start current
+SAP 4, 0, 3500 	// max ramp velocity
+SAP 11, 0, 1000 // max acceleration
+SAP 26, 0, 211200 // IIt limit
+SAP 253, 0, 8 // motor poles
+SAP 254, 0, 0 // hall sensor invert
+SAP 252, 0, 0 // hall interpolation
+SAP 250, 0, 4000 // encoder steps
+SAP 251, 0, 1 // encoder direction
+SAP 249, 0, 1 // encoder init mode
+SAP 172, 0, 500 // torque P
+SAP 173, 0, 300 // torque I
+SAP 234, 0, 300 // velocity P
+SAP 235, 0, 50 // velocity I
+SAP 230, 0, 100 // position P
+
+SAP 164, 0, 0   // deactivate left and right stop switch input
+
+modeSet:
+	SAP 11, 0, 1000 // max acceleration
+	SAP 4, 0, 3500 	// max ramp velocity
+	MST 0
+	WAIT TICKS, 0, 50
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, IN0eq1 // Jump if IN0 is 1
+
+	// IN0 must be 0 (Automatic modes)
+	GIO 1, 0	// read IN1
+	AGP 2, 2
+	JC ZE, Bi_Auto // if IN1 is 0, then mode = 00
+	JA Uni_Auto // if IN1 is 1, then mode = 01
+	
+	// IN0 must be 1 (Potentiometer controlled speed tracking)
+IN0eq1:
+	GIO 1, 0	// read IN1
+	AGP 2, 2
+	JC ZE, Bi_Control // if IN1 is 0, then mode = 10
+	JA Uni_Control // if IN1 is 1, then mode = 11
+
+Bi_Control: // Mode 10
+	SAP 11, 0, 2000 // max acceleration
+	SAP 4, 0, 2000 	// max ramp velocity
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC ZE, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC NZ, modeSet // If not 11, then leave
+	GIO 0, 1    // get adc value
+	AGP 0, 2
+	COMP 1950
+	JC GE, satPositive
+	COMP 100
+	JC LE, satNegative
+	COMP 1000
+	JC GE, positive
+	COMP 850
+	JC LE, negative
+	MST 0
+	WAIT TICKS, 0, 50 // 1 TICK = 10 msec
+	JA Bi_Control
+positive:
+	CALC MUL, 2       
+	CALC SUB, 1900          
+	AAP 2, 0	// set velocity
+	JA Bi_Control
+negative:
+	CALC MUL, 38           
+	CALC DIV, 15         
+	CALC SUB, 2254
+	AAP 2, 0	// set velocity
+	JA Bi_Control
+satPositive:
+	CALC LOAD, 2000
+	AAP 2, 0 // set velocity
+	JA Bi_Control
+satNegative:
+	CALC LOAD, -2000
+	AAP 2, 0 // set velocity
+	JA Bi_Control
+
+Uni_Control: // Mode 11
+	//SAP 11, 0, 500 // max acceleration
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC ZE, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC ZE, modeSet // If not 11, then leave	
+	GIO 0, 1    // get adc value
+	AGP 0, 2
+	COMP 1950
+	JC GE, satUni
+	COMP 100
+	JC LT, halt
+	CALC MUL, 68
+	CALC DIV, 37
+	CALC SUB, 83          
+	AAP 2, 0 // set velocity     
+	JA Uni_Control
+halt:
+	MST 0
+	WAIT TICKS, 0, 50
+	JA Uni_Control
+satUni:
+	CALC LOAD, 3500
+	AAP 2, 0 // set velocity
+	JA Uni_Control
+
+Bi_Auto: // Mode 00
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC NZ, modeSet
+	GIO 0, 1 //read ADC value
+	AGP 0, 2
+	COMP 100
+	JC LT, motorHaltBi_Auto
+	MST 0
+	WAIT TICKS, 0, 350 // Ensure motor stops
+	SAP 11, 0, 3000 // max acceleration of 1500
+	SAP 4, 0, 2000 	// max ramp velocity
+subBi_Auto:
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC NZ, modeSet
+	GIO 0, 1 //read ADC value
+	AGP 0, 2
+	COMP 100
+	JC LT, motorHaltBi_Auto
+	GIO 0, 1 // read ADC value
+	AAP 2, 0
+	WAIT TICKS, 0, 200
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC NZ, modeSet
+	GIO 0, 1 //read ADC value
+	AGP 0, 2
+	COMP 100
+	JC LT, motorHaltBi_Auto
+	WAIT TICKS, 0, 300
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC NZ, modeSet
+	GIO 0, 1 //read ADC value
+	AGP 0, 2
+	COMP 100
+	JC LT, motorHaltBi_Auto
+	GIO 0, 1 // read ADC value
+	CALC MUL, -1
+	AAP 2, 0
+	WAIT TICKS, 0, 200
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC NZ, modeSet
+	GIO 0, 1 //read ADC value
+	AGP 0, 2
+	COMP 100
+	JC LT, motorHaltBi_Auto
+	WAIT TICKS, 0, 300
+	JA subBi_Auto
+
+motorHaltBi_Auto:
+	MST 0
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC ZE, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC NZ, modeSet
+	GIO 0, 1 //read ADC value
+	AGP 0, 2
+	WAIT TICKS, 0, 20
+	JA subBi_Auto
+
+Uni_Auto: // Mode 01
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC ZE, modeSet
+	MST 0
+	WAIT TICKS, 0, 350 // Ensure motor stops
+	SAP 11, 0, 1000 // max acceleration of 1000
+subUni_Auto:
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC ZE, modeSet
+	GIO 0, 1 //read ADC value
+	AGP 0, 2
+	COMP 100
+	JC LT, motorHaltUni_Auto
+	GIO 0, 1 // read ADC value
+	AGP 0, 2 
+	COMP 100
+	JC LT, motorHaltUni_Auto
+
+	GIO 0, 1 // read ADC value
+	AGP 0, 2
+	CALC DIV, 4
+	SAP 4, 0, 500 	// max ramp velocity
+	AAP 2, 0 // set speed to 1/7 of max
+	SGP 3, 2, 1
+	WAIT TICKS, 0, 500
+
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC ZE, modeSet
+	GIO 0, 1 //read ADC value
+	AGP 0, 2
+	COMP 100
+	JC LT, motorHaltUni_Auto
+	GIO 0, 1 // read ADC value
+	AGP 0, 2 
+	CALC DIV, 4
+	CALC MUL, 2
+	SAP 4, 0, 1000 	// max ramp velocity
+	AAP 2, 0 // set speed to 2/7 of max
+	SGP 3, 2, 2
+	WAIT TICKS, 0, 500
+
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC ZE, modeSet
+	GIO 0, 1 //read ADC value
+	AGP 0, 2
+	COMP 100
+	JC LT, motorHaltUni_Auto
+	GIO 0, 1 // read ADC value
+	AGP 0, 2 
+	CALC DIV, 4
+	CALC MUL, 3
+	SAP 4, 0, 1500 	// max ramp velocity
+	AAP 2, 0 // set speed to 3/7 of max
+	SGP 3, 2, 3
+	WAIT TICKS, 0, 500 
+
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC ZE, modeSet
+	GIO 0, 1 //read ADC value
+	AGP 0, 2
+	COMP 100
+	JC LT, motorHaltUni_Auto
+	GIO 0, 1 // read ADC value
+	AGP 0, 2 
+	SAP 4, 0, 2000 	// max ramp velocity
+	AAP 2, 0 // set speed to 4/7 of max
+	SGP 3, 2, 4
+	WAIT TICKS, 0, 500
+
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC ZE, modeSet
+	GIO 0, 1 //read ADC value
+	AGP 0, 2
+	COMP 100
+	JC LT, motorHaltUni_Auto
+	GIO 0, 1 // read ADC value
+	AGP 0, 2 
+	CALC DIV, 4
+	CALC MUL, 5
+	SAP 4, 0, 2500 	// max ramp velocity
+	AAP 2, 0 // set speed to 5/7 of max
+	SGP 3, 2, 5
+	WAIT TICKS, 0, 500
+	
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC ZE, modeSet
+	GIO 0, 1 //read ADC value
+	AGP 0, 2
+	COMP 100
+	JC LT, motorHaltUni_Auto
+	GIO 0, 1 // read ADC value
+	AGP 0, 2 
+	CALC DIV, 4
+	CALC MUL, 6
+	SAP 4, 0, 3000 	// max ramp velocity
+	AAP 2, 0 // set speed to 6/7 of max
+	SGP 3, 2, 6
+	WAIT TICKS, 0, 500
+
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC ZE, modeSet
+	GIO 0, 1 //read ADC value
+	AGP 0, 2
+	COMP 100
+	JC LT, motorHaltUni_Auto
+	GIO 0, 1 // read ADC value
+	AGP 0, 2 
+	CALC DIV, 4
+	CALC MUL, 7
+	SAP 4, 0, 3500 	// max ramp velocity
+	AAP 2, 0 // set speed to max
+	SGP 3, 2, 7
+	WAIT TICKS, 0, 500
+
+	MST 0
+	WAIT TICKS, 0, 400
+
+	JA subUni_Auto
+
+motorHaltUni_Auto:
+	SAP 11, 0, 1000 // max acceleration of 1000
+	MST 0
+	GIO 0, 0    //read IN_0
+	AGP 1, 2 
+	JC NZ, modeSet
+	GIO 1, 0    //read IN_1
+	AGP 2, 2
+	JC ZE, modeSet
+	GIO 0, 1 //read ADC value
+	AGP 0, 2
+	WAIT TICKS, 0, 50
+	JA subUni_Auto
+
+STOP
