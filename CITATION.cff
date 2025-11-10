@@ -9,7 +9,7 @@ authors:
 - family-names: "DePinto"
   given-names: "Adam"
 title: "Motor-FOC-Visualization-Tool"
-version: 0.2.0-alpha
+version: 0.1.0-alpha
 doi: 10.5281/zenodo.17572664
 date-released: 2025-11-10
 url: "https://github.com/ManveerA/Motor-FOC-Visualization-Tool"
