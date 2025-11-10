@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Aujla"
+  given-names: "Manveer"
+  orcid: "https://orcid.org/0009-0006-9898-140X"
+- family-names: "Feher"
+  given-names: "Gavin"
+- family-names: "DePinto"
+  given-names: "Adam"
+title: "Motor-FOC-Visualization-Tool"
+version: 0.2.0-alpha
+doi: 10.5281/zenodo.17572664
+date-released: 2025-11-10
+url: "https://github.com/ManveerA/Motor-FOC-Visualization-Tool"
