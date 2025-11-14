@@ -10,10 +10,25 @@ import spidev
 import gpiod
 import time
 
+class SquarePlotWidget(pg.PlotWidget):
+    def __init__(self, xrange=None, yrange=None, **kwargs):
+        super().__init__(**kwargs)
+        vb = self.getPlotItem().getViewBox()
+        vb.setAspectLocked(True, ratio=1)        # keep 1:1 aspect
+        if xrange: self.setXRange(*xrange)
+        if yrange: self.setYRange(*yrange)
+
+    def sizeHint(self):
+        s = super().sizeHint()
+        side = min(s.width(), s.height())
+        return QSize(side, side)
+
 class MyWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Demonstration of Electromechanical Relationships in a Controlled Electric Motor")
+        #self.setWindowTitle("Demonstration of Electromechanical Relationships in a Controlled Electric Motor")
+        self.setWindowTitle(" ")
+        #self.resize(1360, 768)
         self.resize(1920, 1080)
 
         vertLabelFontSize = '30pt'
@@ -96,7 +111,7 @@ class MyWindow(QMainWindow):
         self.wVolts = np.zeros(self.analogLen)
         self.wVoltsCurve = voltagePlot.plot(self.plotTimeVec[0:self.analogPlotLen],self.wVolts[0:self.analogPlotLen], pen = pg.mkPen(color = '#4477AA', width = plotLineWidth), name = 'WU')
         
-        # UVW Motor Phase Currents
+        # UVW Motor Currents
         currentPlot = pg.PlotWidget()
         currentPlot.setLabel('left','Current (A)', **{'font-size': '27pt'})
         currentPlot.showGrid(x = True, y = True, alpha = 0.2)
@@ -121,6 +136,7 @@ class MyWindow(QMainWindow):
         axis = self.speedPlot.getPlotItem().getAxis('left')
         axis.setLabel('Speed (rpm)', **{'font-size': vertLabelFontSize})
         axis.setWidth(112)
+        #self.speedPlot.setLabel('left','Speed (rpm)', **{'font-size': vertLabelFontSize}, offset=100)
         self.speedPlot.setLabel('bottom','Sample #', **{'font-size': vertLabelFontSize})
         self.speedPlot.showGrid(x = True, y = True, alpha = 0.2)
         self.speedPlot.setYRange(0, 3535)
@@ -192,6 +208,7 @@ class MyWindow(QMainWindow):
         axis = motorPhasePlot.getPlotItem().getAxis('left')
         axis.setLabel('Voltage (V)', **{'font-size': vertLabelFontSize})
         axis.setWidth(98)
+        #motorPhasePlot.setLabel('left','Voltage (V)', **{'font-size': vertLabelFontSize})
         motorPhasePlot.setLabel('bottom','Time (ms)', **{'font-size': vertLabelFontSize})
         motorPhasePlot.getPlotItem().getAxis('left').setTicks([[(0,'0'),(5,'5'),(10,'10'),(15,'15'),(20,'20')]])
         motorPhasePlot.showGrid(x = True, y = True, alpha = 0.2)
@@ -230,6 +247,8 @@ class MyWindow(QMainWindow):
         hbox = QHBoxLayout(container)
         hbox.setContentsMargins(0,0,0,0)
         hbox.addStretch(1)
+        #container.setStyleSheet('background-color: #FFFFFF;')
+        #leftCol.addWidget(container, 1, 0)
         hbox.addWidget(dqPlot, 10)
         hbox.addStretch(1)
         leftCol.addWidget(container, 1, 0)
@@ -238,6 +257,7 @@ class MyWindow(QMainWindow):
         dqPlot.addItem(yAxis)
         xAxis = pg.PlotDataItem([-30, 30], [0, 0], pen = pg.mkPen(color = "#000000", width = 1))
         dqPlot.addItem(xAxis)
+        #dqPlot.addLegend(offset = (20, -10), labelTextSize = '30pt')
         dqPlot.getAxis('left').setStyle(tickFont = vertFont)
         dqPlot.getAxis('bottom').setStyle(tickFont = vertFont)
 
@@ -281,10 +301,17 @@ class MyWindow(QMainWindow):
             '<span style="color:#000000; font-size:30pt;"> +</span>'
             '<span style="color:#66CCEE; font-size:30pt; font-weight: bold;"> Back EMF</span>'
         )
+        #logo_pixmap = QPixmap("eng-logo.png").scaled(158, 50)
+        #logo_pixmap = QPixmap("eng-logo.png").scaled(221, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        #equationPixmap = QPixmap("capstone-equation2.png").scaled(1209, 56, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        
+        #equationLabel.setPixmap(equationPixmap)
 
+        #equationLabel.setFrameStyle(0)
         equationLabel.setContentsMargins(0,0,0,0)
         equationLabel.setStyleSheet('padding-bottom: 5px; padding-left: 80px; padding-right: 0px;')
         leftCol.addWidget(equationLabel, 0, 0, alignment=Qt.AlignCenter)
+        #grid.addWidget(equationLabel, 1, 0, alignment=Qt.AlignCenter)
 
         dqVoltsTimePlot = pg.PlotWidget()
         dqVoltsTimePlot.setLabel('left','Avg. Voltage (V)', **{'font-size': vertLabelFontSize})
@@ -331,6 +358,7 @@ class MyWindow(QMainWindow):
 
         hallPlot = pg.PlotWidget()
         hallPlot.setYRange(0, 5)
+        #hallPlot.setXRange(0, self.hallPlotLen+10)
         hallPlot.setLabel('left','State', **{'font-size': vertLabelFontSize})
         hallPlot.setLabel('bottom','Time (ms)', **{'font-size': vertLabelFontSize})
         hallPlot.getAxis('left').setStyle(tickFont = vertFont)
@@ -351,6 +379,7 @@ class MyWindow(QMainWindow):
 
         encoderPlot = pg.PlotWidget()
         encoderPlot.setYRange(0, 5)
+        #encoderPlot.setXRange(0, self.encoderPlotLen+1)
         encoderPlot.setLabel('left','State', **{'font-size': vertLabelFontSize})
         encoderPlot.setLabel('bottom','Time (ms)', **{'font-size': vertLabelFontSize})
         encoderPlot.getAxis('left').setStyle(tickFont = vertFont)
@@ -387,6 +416,8 @@ class MyWindow(QMainWindow):
         hbox = QHBoxLayout(container)
         hbox.setContentsMargins(0,0,0,0)
         hbox.addStretch(1)
+        #container.setStyleSheet('background-color: #FFFFFF;')
+        #leftCol.addWidget(container, 1, 0)
         hbox.addWidget(homedqPlot, 10)
         hbox.addStretch(1)
         leftCol.addWidget(container, 1, 0)
@@ -395,6 +426,7 @@ class MyWindow(QMainWindow):
         homedqPlot.addItem(yAxis)
         xAxis = pg.PlotDataItem([-30, 30], [0, 0], pen = pg.mkPen(color = "#000000", width = 1))
         homedqPlot.addItem(xAxis)
+        #dqPlot.addLegend(offset = (20, -10), labelTextSize = '30pt')
         homedqPlot.getAxis('left').setStyle(tickFont = vertFont)
         homedqPlot.getAxis('bottom').setStyle(tickFont = vertFont)
 
@@ -438,10 +470,17 @@ class MyWindow(QMainWindow):
             '<span style="color:#000000; font-size:30pt;"> +</span>'
             '<span style="color:#66CCEE; font-size:30pt; font-weight: bold;"> Back EMF</span>'
         )
+        #logo_pixmap = QPixmap("eng-logo.png").scaled(158, 50)
+        #logo_pixmap = QPixmap("eng-logo.png").scaled(221, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        #equationPixmap = QPixmap("capstone-equation2.png").scaled(1209, 56, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        
+        #equationLabel.setPixmap(equationPixmap)
 
+        #equationLabel.setFrameStyle(0)
         homeEquationLabel.setContentsMargins(0,0,0,0)
         homeEquationLabel.setStyleSheet('padding-bottom: 5px; padding-left: 80px; padding-right: 0px;')
         leftCol.addWidget(homeEquationLabel, 0, 0, alignment=Qt.AlignCenter)
+        #grid.addWidget(equationLabel, 1, 0, alignment=Qt.AlignCenter)
 
         homeVoltagePlot = pg.PlotWidget()
         homeVoltagePlot.setLabel('left','Voltage (V)', **{'font-size': vertLabelFontSize})
@@ -524,7 +563,7 @@ class MyWindow(QMainWindow):
         # ----- Setting Tabs ----- #
         self.tabs.addTab(self.homeTab, "Home")
         self.tabs.addTab(self.timeDomainTab, "Analog Signals")
-        self.tabs.addTab(self.vectorTab, "Space Vectors")
+        self.tabs.addTab(self.vectorTab, "Vectors")
         self.tabs.addTab(self.rawTab, "Digital Signals")
 
         self.setCentralWidget(self.tabs)
@@ -532,30 +571,33 @@ class MyWindow(QMainWindow):
         # ----- Making Bar at the Bottom ----- #
         
         logo_label = QLabel()
-        logo_pixmap = QPixmap("eng-logo.png").scaled(400, 168, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        #logo_pixmap = QPixmap("eng-logo.png").scaled(158, 50)
+        #logo_pixmap = QPixmap("UM-logo-horizontal-CMYK_smaller.png").scaled(221, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        logo_pixmap = QPixmap("UM-logo-horizontal-CMYK_smaller.png").scaled(400, 168, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         logo_label.setPixmap(logo_pixmap)
 
-        team_label = QLabel("Team 34")
-        team_label.setStyleSheet("font-size: 36pt; font-weight: bold; padding-right: 10px")
+        #team_label = QLabel("Team 34")
+        #team_label.setStyleSheet("font-size: 36pt; font-weight: bold; padding-right: 10px")
         logo_label.setFrameStyle(0)
         logo_label.setContentsMargins(0,0,0,0)
-        logo_label.setStyleSheet('padding-top: 10px; padding-bottom: 10px; padding-left: 10px; padding-right: 20px')
-        team_label.setFrameStyle(0)
+        logo_label.setStyleSheet('padding-top: 10px; padding-bottom: 10px; padding-left: 20px; padding-right: 13px')
+        #team_label.setFrameStyle(0)
 
         logo_widget = QWidget()
         logo_widget.setObjectName("Test")
         logo_layout = QHBoxLayout(logo_widget)
         logo_layout.addWidget(logo_label)
-        logo_layout.addWidget(team_label)
+        #logo_layout.addWidget(team_label)
         logo_layout.setContentsMargins(0,0,0,0)
         logo_widget.setStyleSheet("""
             QWidget#Test{
-            border: 2px solid #C8C8C8; 
-            border-radius: 6px; 
+            border: 0px solid #C8C8C8; 
+            border-radius: 0px; 
             padding: 4px 8px; 
-            background: #FFFFFF
+            background: #edeceb
             }
             """)
+        #logo_widget.setStyleSheet("padding: 4px 8px")
 
         statusContainer = QWidget()
         main_layout = QHBoxLayout()
@@ -604,6 +646,7 @@ class MyWindow(QMainWindow):
         main_layout.setSpacing(0)
         main_layout.addStretch(3)
         self.save_button = QPushButton('\U0001F4E4 Export')
+        #self.save_button.setStyleSheet("font-size: 36pt; padding-top: 8px; border: 2px solid #C8C8C8; border-radius: 6px; background: #DEDEDE")
         self.save_button.setStyleSheet("""
             QPushButton {
             font-size: 36pt;
@@ -645,6 +688,7 @@ class MyWindow(QMainWindow):
         self.spi0.open(0, 0)
         self.spi0.max_speed_hz = 1000000
         self.spi0.mode = 0
+        #self.spi0.bits_per_word = 16
 
         chip = gpiod.Chip("gpiochip4")
         self.hallLines = chip.get_lines([23, 24, 25, 17, 27, 22, 5])
@@ -658,6 +702,7 @@ class MyWindow(QMainWindow):
 
         self.timeVec = np.zeros(self.analogLen)
         self.timeVecExt = np.zeros(self.hallLen)
+        #self.timeVecT = np.zeros(self.encoderLen)
 
         self.seq = 1
         self.timer = pg.QtCore.QTimer()
@@ -677,6 +722,9 @@ class MyWindow(QMainWindow):
 
                 self.encoderZ[:-1] = self.encoderZ[1:]
                 self.encoderZ[-1] = GPIOvals[5]
+
+                #self.timeVecT[:-1] = self.timeVecT[1:]
+                #self.timeVecT[-1] = time.time()
 
             elif(self.counter >= (self.maxCount - self.hallLen - self.encoderLen)):
                 GPIOvals = self.hallLines.get_values()
@@ -738,6 +786,7 @@ class MyWindow(QMainWindow):
 
             if(self.counter == self.maxCount):
                 self.counter = 0
+                #print(np.median(np.diff(self.timeVecT)))
 
                 stopFlag = 0
                 for i in range(0,self.hallLen - 1):
@@ -805,11 +854,20 @@ class MyWindow(QMainWindow):
                 self.encoderCurveB.setData(self.encoderPlotTimeVec,modEncoderB)
                 self.encoderCurveZ.setData(self.encoderPlotTimeVec,modEncoderZ)
 
-                # ----- DSP OF ANALOG SIGNALS ----- #
+                #if(speedEnc < 800):
+                #    self.hallLen = 6000
+                #else:
+                #    self.hallLen = 2700
+
+                #speedLabelStr = f"Speed: {speedEnc:.0f} rpm"
+                #self.value_display.setText(f'{speedLabelStr[0:6]} {speedLabelStr[7:len(speedLabelStr)].rjust(9)}')
+
+                ######### ANALOG ########
                 uvVolts = self.uVolts - self.vVolts
 
                 f_s = 1/np.median(np.diff(self.timeVec))
-                f_n = f_s/self.analogLen*np.arange(0,int(self.analogLen/2)-1)
+                f_n = f_s/self.analogLen*np.arange(0,int(self.analogLen/2)-1) 
+                #print(1/f_s*1000)
 
                 UV = np.fft.fft(uvVolts)
                 G_n = np.abs(UV[0:(int(self.analogLen/2)-1)])/self.analogLen
@@ -874,6 +932,8 @@ class MyWindow(QMainWindow):
                     f_i2 = 2*np.argmax([G_n[f_i-1], G_n[f_i+1]]) - 1
                     self.f_est = np.median([self.f_est, f_est2, f_est3, f_est4, f_est5, (G_n[f_i]*f_n[f_i] + G_n[f_i+f_i2]*f_n[f_i+f_i2])/(G_n[f_i] + G_n[f_i+f_i2])])
 
+                    #print(self.f_est)
+
                     w_n = min(2*1.5*self.f_est/f_s, 99/100)
                     butterb, buttera = butter(4, w_n, btype = 'low')
                     uvFilt = filtfilt(butterb, buttera, self.uVolts - self.vVolts)
@@ -883,7 +943,7 @@ class MyWindow(QMainWindow):
                     vFilt = filtfilt(butterb, buttera, self.vAmps)
                     wFilt = filtfilt(butterb, buttera, self.wAmps)
 
-                    # ----- START OF DQ0 ----- #
+                    # START OF DQ
 
                     timeMod = np.zeros(2*len(self.timeVec) - 1)
                     for i in range(0,len(self.timeVec)-1):
@@ -953,7 +1013,7 @@ class MyWindow(QMainWindow):
 
                     stopFlag = 0
 
-                    for j in range(0,len(wuFiltMod)-2): # old: -3.44 going up
+                    for j in range(0,len(wuFiltMod)-2): #-3.44 going up
                         stopFlag = (uvFiltMod[j] >= -0.15*max(uvFiltMod)) and (uvFiltMod[j+1] <= -0.15*max(uvFiltMod))
                         if(stopFlag == 1): # -0.272
                             break
@@ -961,6 +1021,8 @@ class MyWindow(QMainWindow):
                     if (stopFlag == 0):
                         j = 1
 
+                    #i=0
+                    #j=0
                     timeModLim = timeMod[0:min(self.analogPlotLen+1,2*self.analogPlotLen-1-i)]
                     timeModLim = np.concatenate((np.array([0]), np.cumsum(np.diff(timeModLim))))
 
@@ -974,6 +1036,14 @@ class MyWindow(QMainWindow):
                     uvFiltModLim = uvFiltMod[j:(j + self.analogPlotLen)]
                     vwFiltModLim = vwFiltMod[j:(j + self.analogPlotLen)]
                     wuFiltModLim = wuFiltMod[j:(j + self.analogPlotLen)]
+
+                    #dqButterB, dqButterA = butter(7, 0.04, btype = 'high') #WASTEFUL CODE EDIT LATER
+                    #print(np.median(uFiltModLim))
+                    #uFiltModLim = uFiltModLim - np.median(uFiltModLim)#filtfilt(dqButterB, dqButterA, uFiltModLim)
+                    #vFiltModLim = vFiltModLim - np.median(vFiltModLim)
+                    #wFiltModLim = wFiltModLim - np.median(wFiltModLim)
+                    #vFiltModLim = filtfilt(dqButterB, dqButterA, vFiltModLim)
+                    #wFiltModLim = filtfilt(dqButterB, dqButterA, wFiltModLim)
 
                     dAmps = np.zeros(len(uFiltModLim)-1)
                     qAmps = np.zeros(len(uFiltModLim)-1)
@@ -1000,6 +1070,8 @@ class MyWindow(QMainWindow):
                         qVolts[i] = -2/3*(np.sin(2*np.pi*fdq*timeModLim2[i])*uvFiltModLim[i] + \
                             np.sin(2*np.pi*(fdq*timeModLim2[i] - 1/3))*vwFiltModLim[i] + \
                             np.sin(2*np.pi*(fdq*timeModLim2[i] + 1/3))*wuFiltModLim[i])
+                    
+                    #if (self.seq > 0):
                     
                     dAmpsAvg = np.mean(dAmps)/np.sqrt(3)
                     qAmpsAvg = np.mean(qAmps)/np.sqrt(3)
@@ -1051,11 +1123,12 @@ class MyWindow(QMainWindow):
                 self.zAmpsHomeCurve.setData(self.plotTimeVec[0:upperBound],zAmps[0:upperBound]/np.sqrt(3))
 
                 Rs = 0.72
-                Ld = 0.0012
+                Ld = 0.0012 # 0.007 # 0.0012
                 Lq = Ld
                 #p = 4
                 we = self.seq*self.f_est*2*np.pi
-                fluxLinkage = 0.01
+                #wep = 
+                fluxLinkage = 0.01 #0.009 # 0.01
 
                 self.vdqCurve.setData([dVoltsAvg], [qVoltsAvg])
                 self.vdqVector.setData([0, dVoltsAvg], [0, qVoltsAvg])
@@ -1072,7 +1145,7 @@ class MyWindow(QMainWindow):
                 self.idqCurve.setData([-we*Lq*qAmpsAvg + Rs*dAmpsAvg], [we*Ld*dAmpsAvg + Rs*qAmpsAvg + we*fluxLinkage])
                 self.idqVector.setData([0, -we*Lq*qAmpsAvg + Rs*dAmpsAvg], [0, we*Ld*dAmpsAvg + Rs*qAmpsAvg + we*fluxLinkage])
 
-                # ----- HOME TAB ----- #
+                # Home tab
                 self.vdqHomeCurve.setData([dVoltsAvg], [qVoltsAvg])
                 self.vdqHomeVector.setData([0, dVoltsAvg], [0, qVoltsAvg])
 
@@ -1117,8 +1190,13 @@ class MyWindow(QMainWindow):
                     else:
                         self.refSpeedVec[-1] = tSpeed
                 
+                #if((abs(self.refSpeedVec[-3] - self.refSpeedVec[-1]) < 50) and ((abs(self.refSpeedVec[-1] - self.refSpeedVec[-2]) > 50) or (abs(self.refSpeedVec[-3] - self.refSpeedVec[-2]) > 50))):
+                #    self.refSpeedVec[-2] = 0.5*(self.refSpeedVec[-3] + self.refSpeedVec[-1])
                 self.refSpeedCurve.setData(self.refSpeedVec[1:(len(self.refSpeedVec))])
 
+                #if (np.any(self.speed > 2010) and np.any(self.speed < 0)):
+                #    self.speedPlot.setYRange(-3535, 3535)
+                #if(np.any(self.speed < 0) and (self.speed[-1] >= 2100))
                 if(np.any(self.speed < 0) and (not(self.speed[-1] >= 2100))):
                     self.speedPlot.setYRange(-2010, 2010)
                 else:
@@ -1223,6 +1301,14 @@ class MyWindow(QMainWindow):
                 np.savetxt(f, self.encoderCurveA.getData()[1][None], delimiter = ',')
                 np.savetxt(f, self.encoderCurveB.getData()[1][None], delimiter = ',')
                 np.savetxt(f, self.encoderCurveZ.getData()[1][None], delimiter = ',')
+
+                np.savetxt(f, self.timeVec[None], delimiter = ',')
+                np.savetxt(f, self.uVolts[None], delimiter = ',')
+                np.savetxt(f, self.vVolts[None], delimiter = ',')
+                np.savetxt(f, self.wVolts[None], delimiter = ',')
+                np.savetxt(f, self.uAmps[None], delimiter = ',')
+                np.savetxt(f, self.vAmps[None], delimiter = ',')
+                np.savetxt(f, self.wAmps[None], delimiter = ',')
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
